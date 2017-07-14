@@ -1,0 +1,22 @@
+{
+  "name": "mp3tube",
+  "version": "1.0.0",
+  "description": "Node app to download mp3 files from YouTube videos.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "music",
+    "mp3",
+    "youtube",
+    "download"
+  ],
+  "author": "shecoder",
+  "license": "ISC",
+  "dependencies": {
+    "request": "^2.81.0",
+    "request-promise": "^4.2.1",
+    "wget-improved": "^1.5.0"
+  }
+}
