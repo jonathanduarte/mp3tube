@@ -2,10 +2,14 @@
 var http = require('http');
 var request = require('request');
 var wget = require('wget-improved');
-var dest = 'downloaded';
+var dest = __dirname + "/downloaded";
 var rp = require('request-promise');
 var fs = require('fs');
-const { URL } = require('url');
+const Q = require("q");
+const Youtube = require("youtube-api");
+const API_KEY = "AIzaSyDspwOrR10HxgDDQ1tVMjuPvYKPxRkZIYQ";
+
+var songs = [];
 
 function printProgress(progress){
     process.stdout.clearLine();
@@ -18,16 +22,56 @@ function readFile() {
 	return songs;
 }
 
-function downloadPlaylist() {
-	var songs = readFile();
-	songs.forEach(function(n){
-		downloadSong(n);
-	})
+function getPlaylistItems(id, page) {
+	var deferred = Q.defer();
+	var options = {
+		"url" : "https://content.googleapis.com/youtube/v3/playlistItems?playlistId=" + id + "&maxResults=2&part=snippet%2CcontentDetails&key=" + API_KEY + (!!page ? "&pageToken=" + page : ""),
+		"method" : "GET"
+	}
+
+	rp(options)
+		.then(function(resp) {
+			data = JSON.parse(resp);
+			data.items.forEach(function(n){
+				console.log("WHERE MY SONGS AT?? ", songs)
+				songs.push("https://www.youtube.com/watch?v=" + n.contentDetails.videoId);
+			})
+
+			
+			if (data.pageInfo.totalResults > songs.length) {
+				console.log("Mayor");
+				getPlaylistItems(id, data.nextPageToken)
+					.then(function() {
+						deferred.resolve();
+					})
+			}
+			else if (data.pageInfo.totalResults = songs.length && !!songs) {
+				deferred.resolve()
+			}
+		})
+		.catch(function(e) {
+			console.error("Couldn't get elements from playlist", e);
+		})
+
+	return deferred.promise;
 }
 
-function downloadSong(url){
+function downloadPlaylist() {
+	getPlaylistItems("PLtGmakrpiY6vU5gx7KIIxHa3ciBjWBcHV")
+		.then(function() {
+			if (!!songs){
+				downloadSong(songs);
+			}
+		});
+}
+
+function downloadSong(array, index){
+	if (!index) index = 0;
+
+	if (index >= array.length) return;
+
 	var options = {
-		"url": "http://www.youtubeinmp3.com/fetch/?format=JSON&video=" + url,
+		"url": "http://www.youtubeinmp3.com/fetch/?format=JSON&video=" + array[index],
 		"method": "POST"
 	};
 
@@ -45,14 +89,15 @@ function downloadSong(url){
 				.on("response", function(response){
 					console.log("Downloading " + parsedData.title);
 					var src = "http:" + response.headers['location'];
-					var output = parsedData.title.trim() + '.mp3';
+					var output = dest + "/" + parsedData.title.trim() + '.mp3';
 					var options = {};
 
 					if (!fs.existsSync(dest)){
 					    fs.mkdirSync(dest);
 					}
 
-					var download = wget.download(src, output, options );
+					var download = wget.download(src, output, options);
+
 
 					download.on('progress', function(progress) {
 						printProgress(Math.floor(progress * 100));
@@ -60,15 +105,17 @@ function downloadSong(url){
 
 					download.on('end', function(output) {
 					    console.log("\n Finished downloading " + parsedData.title);
+					    downloadSong(array, index + 1);
 					});
 
 					download.on('error', function(err) {
-					    console.log('Error on download', err);
+					    console.error(parsedData.title + " couldn't be downloaded");
 					});
+
 				})
 		})
 		.catch(function(e) {
-			console.log("Error!! ", e);
+			console.error(parsedData.title + " couldn't be downloaded.");
 		})
 };
 
