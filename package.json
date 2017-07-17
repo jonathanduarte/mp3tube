@@ -15,8 +15,10 @@
   "author": "shecoder",
   "license": "ISC",
   "dependencies": {
+    "q": "^1.5.0",
     "request": "^2.81.0",
     "request-promise": "^4.2.1",
-    "wget-improved": "^1.5.0"
+    "wget-improved": "^1.5.0",
+    "youtube-api": "^2.0.8"
   }
 }
