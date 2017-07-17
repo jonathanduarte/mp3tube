@@ -33,7 +33,6 @@ function getPlaylistItems(id, page) {
 		.then(function(resp) {
 			data = JSON.parse(resp);
 			data.items.forEach(function(n){
-				console.log("WHERE MY SONGS AT?? ", songs)
 				songs.push("https://www.youtube.com/watch?v=" + n.contentDetails.videoId);
 			})
 
